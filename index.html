@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Flappy Bird - Vertical Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Press Start 2P', cursive;
+            touch-action: manipulation;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background: #87ceeb;
+            display: block;
+            touch-action: none;
+        }
+
+        .menu-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
+            color: #fff;
+            z-index: 10;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .menu-screen.hidden {
+            display: none;
+        }
+
+        .menu-title {
+            font-size: clamp(16px, 6vw, 28px);
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(45deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 5px #ffd700);
+            }
+
+            to {
+                filter: drop-shadow(0 0 20px #ffd700);
+            }
+        }
+
+        .menu-subtitle {
+            font-size: clamp(8px, 3vw, 14px);
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ccc;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .menu-btn {
+            font-family: 'Press Start 2P', cursive;
+            padding: 15px 20px;
+            font-size: clamp(7px, 2.5vw, 12px);
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: #fff;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none;
+            transition: cubic-bezier(0.075, 0.82, 0.165, 1);
+        }
+
+        .menu-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .menu-btn:hover::before {
+            left: 100%;
+        }
+
+        .menu-btn:hover,
+        .menu-btn:active {
+            background: linear-gradient(45deg, #ee5a52, #dc4a3d);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+
+        .secondary-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .secondary-btn:hover,
+        .secondary-btn:active {
+            background: linear-gradient(45deg, #44a08d, #3a8c7d);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .tertiary-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .tertiary-btn:hover,
+        .tertiary-btn:active {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .selection-screen {
+            padding: 20px;
+            justify-content: flex-start;
+            padding-top: 60px;
+        }
+
+        .selection-item {
+            text-align: center;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .selection-name {
+            font-size: clamp(10px, 4vw, 16px);
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .selection-preview {
+            height: auto;
+            margin: 15px auto;
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+        }
+
+        .selection-description {
+            font-size: clamp(6px, 2vw, 10px);
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .selection-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 15px;
+            font-size: clamp(6px, 2vw, 10px);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .control-btn:hover,
+        .control-btn:active {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: clamp(10px, 4vw, 16px);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .pause-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            font-size: clamp(12px, 4vw, 18px);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .pause-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .leaderboard-item {
+            padding: 15px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: clamp(6px, 2.5vw, 10px);
+            color: #fff;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .tap-instruction {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: clamp(8px, 3vw, 12px);
+            text-align: center;
+            z-index: 5;
+            animation: bounce 2s infinite;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        .nest-indicator {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: clamp(6px, 2.5vw, 10px);
+            text-align: center;
+            z-index: 5;
+            animation: pulse 1.5s infinite;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 10px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: clamp(12px, 4vw, 18px);
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: clamp(6px, 2vw, 10px);
+            color: #ccc;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .menu-grid .menu-btn {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-icon {
+            font-size: clamp(16px, 5vw, 24px);
+            margin-bottom: 5px;
+        }
+
+        .btn-text {
+            font-size: clamp(6px, 2vw, 10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Main Menu -->
+        <div id="mainMenu" class="menu-screen">
+            <h1 class="menu-title">🐦 Flappy Bird</h1>
+            <p class="menu-subtitle">Tap to soar through the sky!</p>
+            <div class="menu-grid">
+                <button class="menu-btn" onclick="showBirdSelect()">
+                    <div class="btn-icon">🎮</div>
+                    <div class="btn-text">Play</div>
+                </button>
+                <button class="menu-btn secondary-btn" onclick="showLeaderboard()">
+                    <div class="btn-icon">🏆</div>
+                    <div class="btn-text">Scores</div>
+                </button>
+                <button class="menu-btn tertiary-btn" onclick="showSettings()">
+                    <div class="btn-icon">⚙️</div>
+                    <div class="btn-text">Settings</div>
+                </button>
+                <button class="menu-btn secondary-btn" onclick="showInstructions()">
+                    <div class="btn-icon">❓</div>
+                    <div class="btn-text">Help</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bird Selection -->
+        <div id="birdSelectScreen" class="menu-screen selection-screen hidden">
+            <button class="back-btn" onclick="showMainMenu()">‹</button>
+            <h1 class="menu-title">Choose Your Bird</h1>
+            <div class="selection-item">
+                <div class="selection-name" id="birdName">Sparrow</div>
+                <canvas id="birdPreview" class="selection-preview" width="100" height="100"></canvas>
+                <div class="selection-description" id="birdDescription">A small, agile bird.</div>
+                <div class="selection-controls">
+                    <button class="control-btn" onclick="prevBird()">◀ Prev</button>
+                    <button class="control-btn" onclick="playBirdVoice()">🔊 Voice</button>
+                    <button class="control-btn" onclick="nextBird()">Next ▶</button>
+                </div>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="selectBird()">Select Bird</button>
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Environment Selection -->
+        <div id="envSelectScreen" class="menu-screen selection-screen hidden">
+            <button class="back-btn" onclick="showBirdSelect()">‹</button>
+            <h1 class="menu-title">Choose Environment</h1>
+            <div class="selection-item">
+                <div class="selection-name" id="envName">Classic Sky</div>
+                <canvas id="envPreview" class="selection-preview" width="200" height="150"></canvas>
+                <div class="selection-description" id="envDescription">A bright, clear sky.</div>
+                <div class="selection-controls">
+                    <button class="control-btn" onclick="prevEnv()">◀ Prev</button>
+                    <button class="control-btn" onclick="nextEnv()">Next ▶</button>
+                </div>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="selectEnvironment()">🚀 Start Game</button>
+                <button class="menu-btn secondary-btn" onclick="showBirdSelect()">Back</button>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div id="leaderboardScreen" class="menu-screen selection-screen hidden">
+            <button class="back-btn" onclick="showMainMenu()">‹</button>
+            <h1 class="menu-title">🏆 Leaderboard</h1>
+            <ul id="leaderboardList" class="leaderboard-list"></ul>
+            <div class="menu-buttons">
+                <button class="menu-btn tertiary-btn" onclick="clearLeaderboard()">Clear Scores</button>
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="settingsScreen" class="menu-screen selection-screen hidden">
+            <button class="back-btn" onclick="showMainMenu()">‹</button>
+            <h1 class="menu-title">⚙️ Settings</h1>
+            <div class="selection-item">
+                <div class="selection-name">Sound Effects</div>
+                <div class="selection-controls">
+                    <button class="control-btn" onclick="toggleSound()" id="soundToggle">🔊 ON</button>
+                </div>
+            </div>
+            <div class="selection-item">
+                <div class="selection-name">Difficulty</div>
+                <div class="selection-description" id="difficultyDesc">Normal speed and gap size</div>
+                <div class="selection-controls">
+                    <button class="control-btn" id="difficultyBtn" onclick="changeDifficulty()">◀ Normal ▶</button>
+                </div>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div id="instructionsScreen" class="menu-screen selection-screen hidden">
+            <button class="back-btn" onclick="showMainMenu()">‹</button>
+            <h1 class="menu-title">❓ How to Play</h1>
+            <div class="selection-item">
+                <div class="selection-description" style="text-align: left; line-height: 1.8;">
+                    🐦 <strong>Objective:</strong><br>
+                    Guide your bird through pipes without crashing<br><br>
+
+                    📱 <strong>Controls:</strong><br>
+                    Tap anywhere on the screen to make your bird flap its wings<br><br>
+
+                    🥚 <strong>Getting Started:</strong><br>
+                    Your bird starts in a nest - tap to begin flying<br><br>
+
+                    🏆 <strong>Scoring:</strong><br>
+                    Earn points for each pipe you successfully pass through<br><br>
+
+                    💥 <strong>Game Over:</strong><br>
+                    Touching pipes or the ground will end your flight<br><br>
+
+                    🎯 <strong>Pro Tips:</strong><br>
+                    • Different birds have unique flight characteristics<br>
+                    • Try different environments for varied experiences<br>
+                    • Practice makes perfect - keep trying!
+                </div>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Game Over -->
+        <div id="gameOverScreen" class="menu-screen hidden">
+            <h1 class="menu-title">Game Over</h1>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-value" id="finalScore">0</div>
+                    <div class="stat-label">Final Score</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="highScore">0</div>
+                    <div class="stat-label">Best Score</div>
+                </div>
+            </div>
+            <div class="selection-item">
+                <div class="selection-description" id="gameOverMessage"></div>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="resetGame()">🔄 Play Again</button>
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">🏠 Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Pause Menu -->
+        <div id="pauseScreen" class="menu-screen hidden">
+            <h1 class="menu-title">⏸️ Paused</h1>
+            <div class="menu-buttons">
+                <button class="menu-btn" onclick="resumeGame()">▶️ Resume</button>
+                <button class="menu-btn secondary-btn" onclick="showMainMenu()">🏠 Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Game UI -->
+        <div id="gameUI" class="game-ui hidden">
+            Score: <span id="currentScore">0</span>
+        </div>
+
+        <button id="pauseBtn" class="pause-btn hidden" onclick="pauseGame()">⏸️</button>
+
+        <div id="tapInstruction" class="tap-instruction hidden">
+            Tap to flap! 🐦
+        </div>
+
+        <div id="nestIndicator" class="nest-indicator hidden">
+            Tap to leave the nest! 🥚
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('birdPreview');
+        const previewCtx = previewCanvas.getContext('2d');
+        const envPreviewCanvas = document.getElementById('envPreview');
+        const envPreviewCtx = envPreviewCanvas.getContext('2d');
+
+        // Game settings
+        let soundEnabled = true;
+        let difficulty = 'normal';
+        const difficultySettings = {
+            easy: { speed: 0.5, gap: 250, description: 'Slower speed, larger gaps - perfect for beginners' },
+            normal: { speed: 1, gap: 200, description: 'Normal speed and gap size - the classic experience' },
+            hard: { speed: 1.5, gap: 150, description: 'Faster speed, smaller gaps - for experienced players' }
+        };
+
+        // Set canvas size for mobile
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        // Audio setup
+        let audioContext = null;
+        let audioUnlocked = false;
+
+        function unlockAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            audioUnlocked = true;
+        }
+
+        // Game data
+        const birds = [
+            {
+                name: "Sparrow",
+                description: "Small and agile, easy for beginners. Quick reactions with average flap power.",
+                radius: 14,
+                gravity: 0.3,
+                flap: -7,
+                bodyColors: ['#c2b280', '#8b7355'],
+                wingColor: '#6e5849',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#f4a460', '#cd853f'],
+                voiceType: 'sine',
+                voiceFreq: [300, 360]
+            },
+            {
+                name: "Eagle",
+                description: "Large predator with strong lift but heavy mass. High momentum and power.",
+                radius: 26,
+                gravity: 0.42,
+                flap: -9.5,
+                bodyColors: ['#4b3621', '#2f1b0c'],
+                wingColor: '#3e2c1c',
+                eyeColor: '#ffffe0',
+                pupilColor: '#000',
+                beakColors: ['#ffcc00', '#ffa500'],
+                voiceType: 'triangle',
+                voiceFreq: [180, 220]
+            },
+            {
+                name: "Hummingbird",
+                description: "Extremely light and fast. High frequency flapping with excellent control.",
+                radius: 10,
+                gravity: 0.18,
+                flap: -5.5,
+                bodyColors: ['#00fa9a', '#228b22'],
+                wingColor: '#006400',
+                eyeColor: '#fff',
+                pupilColor: '#000',
+                beakColors: ['#d02090', '#ff69b4'],
+                voiceType: 'sine',
+                voiceFreq: [600, 750]
+            },
+            {
+                name: "Owl",
+                description: "Nocturnal glider. Quiet, smooth and stable flight. Perfect for nighttime runs.",
+                radius: 21,
+                gravity: 0.34,
+                flap: -7.8,
+                bodyColors: ['#a9a9a9', '#808080'],
+                wingColor: '#696969',
+                eyeColor: '#ffa500',
+                pupilColor: '#000',
+                beakColors: ['#deb887', '#cd853f'],
+                voiceType: 'sine',
+                voiceFreq: [200, 250]
+            },
+            {
+                name: "Parrot",
+                description: "Lively and vivid. Strong flaps and medium weight. Playful flying style.",
+                radius: 18,
+                gravity: 0.32,
+                flap: -9,
+                bodyColors: ['#ff0000', '#ff7f00', '#00ff00', '#0000ff'],
+                wingColor: '#1e90ff',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#ffff00', '#ffa500'],
+                voiceType: 'square',
+                voiceFreq: [320, 420]
+            },
+            {
+                name: "Penguin",
+                description: "Flightless on land, but glides underwater. Slow in air but smooth fall.",
+                radius: 23,
+                gravity: 0.5,
+                flap: -6,
+                bodyColors: ['#000000', '#ffffff'],
+                wingColor: '#2f4f4f',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#ff8c00', '#a0522d'],
+                voiceType: 'square',
+                voiceFreq: [100, 130]
+            },
+            {
+                name: "Peacock",
+                description: "Elegant and majestic. Slower flaps but graceful descent.",
+                radius: 24,
+                gravity: 0.36,
+                flap: -7.2,
+                bodyColors: ['#00688b', '#00ced1'],
+                wingColor: '#20b2aa',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#f5deb3', '#deb887'],
+                voiceType: 'triangle',
+                voiceFreq: [250, 280]
+            },
+            {
+                name: "Woodpecker",
+                description: "Rhythmic flyer with burst flaps. Great at navigating tight spaces.",
+                radius: 15,
+                gravity: 0.3,
+                flap: -8.2,
+                bodyColors: ['#8b0000', '#ffffff'],
+                wingColor: '#333333',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#a9a9a9', '#808080'],
+                voiceType: 'sawtooth',
+                voiceFreq: [400, 450]
+            },
+            {
+                name: "Flamingo",
+                description: "Tall and elegant. Smooth flight with long glide time.",
+                radius: 22,
+                gravity: 0.28,
+                flap: -6.5,
+                bodyColors: ['#ffb6c1', '#ffc0cb'],
+                wingColor: '#ff69b4',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#000000', '#ff69b4'],
+                voiceType: 'sine',
+                voiceFreq: [220, 260]
+            },
+            {
+                name: "Crow",
+                description: "Smart and adaptable. Balanced stats and dark style.",
+                radius: 19,
+                gravity: 0.33,
+                flap: -7.5,
+                bodyColors: ['#2c2c2c', '#1a1a1a'],
+                wingColor: '#000000',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#3b3b3b', '#2b2b2b'],
+                voiceType: 'square',
+                voiceFreq: [160, 180]
+            },
+            {
+                name: "Canary",
+                description: "Tiny and cheerful songbird. Very light, ideal for gentle navigation.",
+                radius: 12,
+                gravity: 0.25,
+                flap: -6.2,
+                bodyColors: ['#ffff66', '#f0e68c'],
+                wingColor: '#ffd700',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#ffa500', '#f4a460'],
+                voiceType: 'sine',
+                voiceFreq: [450, 500]
+            },
+            {
+                name: "Kingfisher",
+                description: "Fast and precise, dives smoothly with sharp direction changes.",
+                radius: 13,
+                gravity: 0.3,
+                flap: -7.4,
+                bodyColors: ['#1e90ff', '#00bfff'],
+                wingColor: '#4682b4',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#ff8c00', '#ffa500'],
+                voiceType: 'triangle',
+                voiceFreq: [260, 310]
+            },
+            {
+                name: "Robin",
+                description: "Friendly and balanced. Good choice for consistent flight style.",
+                radius: 13,
+                gravity: 0.3,
+                flap: -7,
+                bodyColors: ['#a52a2a', '#8b0000'],
+                wingColor: '#5c4033',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#ffb347', '#f4a460'],
+                voiceType: 'sine',
+                voiceFreq: [280, 320]
+            },
+            {
+                name: "Blue Jay",
+                description: "Vibrant and energetic. Agile flier with a bold attitude.",
+                radius: 14,
+                gravity: 0.31,
+                flap: -7.5,
+                bodyColors: ['#87cefa', '#4682b4'],
+                wingColor: '#1e90ff',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#2f4f4f', '#3c3c3c'],
+                voiceType: 'square',
+                voiceFreq: [300, 360]
+            },
+            {
+                name: "Toucan",
+                description: "Big beak, fun design. Medium speed but great flapping power.",
+                radius: 15,
+                gravity: 0.33,
+                flap: -8,
+                bodyColors: ['#000000', '#ffffff'],
+                wingColor: '#444444',
+                eyeColor: '#00ffcc',
+                pupilColor: '#000000',
+                beakColors: ['#ffcc00', '#ff4500'],
+                voiceType: 'triangle',
+                voiceFreq: [190, 230]
+            },
+            {
+                name: "Swan",
+                description: "Graceful and smooth. Slower but elegant in motion.",
+                radius: 16,
+                gravity: 0.3,
+                flap: -6.2,
+                bodyColors: ['#ffffff', '#f0f0f0'],
+                wingColor: '#dddddd',
+                eyeColor: '#000000',
+                pupilColor: '#000000',
+                beakColors: ['#ff8c00', '#ff6347'],
+                voiceType: 'sine',
+                voiceFreq: [200, 240]
+            },
+            {
+                name: "Falcon",
+                description: "Ultra-fast and sharp, built for experienced players.",
+                radius: 13,
+                gravity: 0.35,
+                flap: -9.5,
+                bodyColors: ['#444444', '#2f2f2f'],
+                wingColor: '#555555',
+                eyeColor: '#ffd700',
+                pupilColor: '#000',
+                beakColors: ['#f4a460', '#ff8c00'],
+                voiceType: 'sawtooth',
+                voiceFreq: [170, 210]
+            },
+            {
+                name: "Magpie",
+                description: "Curious and clever. Average speed, above average reflex.",
+                radius: 14,
+                gravity: 0.3,
+                flap: -7.2,
+                bodyColors: ['#000000', '#ffffff'],
+                wingColor: '#1c1c1c',
+                eyeColor: '#ffffff',
+                pupilColor: '#000',
+                beakColors: ['#555555', '#444444'],
+                voiceType: 'square',
+                voiceFreq: [220, 270]
+            },
+            {
+                name: "Cockatoo",
+                description: "Playful and loud. Fluffy wings, strong but slow.",
+                radius: 15,
+                gravity: 0.34,
+                flap: -8,
+                bodyColors: ['#fdf5e6', '#fff8dc'],
+                wingColor: '#eee8aa',
+                eyeColor: '#000000',
+                pupilColor: '#000000',
+                beakColors: ['#d2b48c', '#deb887'],
+                voiceType: 'triangle',
+                voiceFreq: [240, 280]
+            },
+            {
+                name: "Barn Swallow",
+                description: "Swift and darting motion. Smooth transitions in air.",
+                radius: 12,
+                gravity: 0.28,
+                flap: -7.1,
+                bodyColors: ['#1e1e1e', '#000080'],
+                wingColor: '#2f4f4f',
+                eyeColor: '#ffffff',
+                pupilColor: '#000000',
+                beakColors: ['#cd5c5c', '#8b0000'],
+                voiceType: 'sine',
+                voiceFreq: [260, 300]
+            }
+        ];
+
+
+        const environments = [
+            {
+                name: "Classic Sky",
+                description: "A bright, clear sky – the original Flappy Bird experience.",
+                skyColors: ['#87ceeb', '#d0f8ff'],
+                groundColor: '#228b22',
+                grassColor: 'rgba(0, 100, 0, 0.25)',
+                pipeColors: ['#66ccff', '#b0e0e6', '#66ccff'],
+                pipeEdgeColor: '#2e8b57',
+                pipeBorderColor: '#1c2526'
+            },
+            {
+                name: "Sunset",
+                description: "A golden hour filled with warm orange and amber light.",
+                skyColors: ['#ff7f50', '#ffd700'],
+                groundColor: '#cd853f',
+                grassColor: 'rgba(205, 133, 63, 0.3)',
+                pipeColors: ['#ff8c00', '#ffcc80', '#ff8c00'],
+                pipeEdgeColor: '#a0522d',
+                pipeBorderColor: '#4a2c2a'
+            },
+            {
+                name: "Night",
+                description: "A deep night sky filled with stars and mystery.",
+                skyColors: ['#0b0c2a', '#1f1f5e'],
+                groundColor: '#2f4f4f',
+                grassColor: 'rgba(47, 79, 79, 0.2)',
+                pipeColors: ['#4b6cb7', '#182848', '#4b6cb7'],
+                pipeEdgeColor: '#202040',
+                pipeBorderColor: '#0f1c1c',
+                stars: true
+            },
+            {
+                name: "Forest",
+                description: "A calm green forest with earthy tones and leafy vibes.",
+                skyColors: ['#2e8b57', '#a2d149'],
+                groundColor: '#6b8e23',
+                grassColor: 'rgba(107, 142, 35, 0.25)',
+                pipeColors: ['#8b5a2b', '#d2b48c', '#8b5a2b'],
+                pipeEdgeColor: '#5c4033',
+                pipeBorderColor: '#3c2f2f'
+            },
+            {
+                name: "Ocean",
+                description: "A refreshing ocean breeze with cool marine colors.",
+                skyColors: ['#00bfff', '#add8e6'],
+                groundColor: '#4682b4',
+                grassColor: 'rgba(70, 130, 180, 0.25)',
+                pipeColors: ['#20b2aa', '#afeeee', '#20b2aa'],
+                pipeEdgeColor: '#008b8b',
+                pipeBorderColor: '#1c3c3c',
+                waves: true
+            },
+
+            // NEW 5 environments below:
+            {
+                name: "Snowy Peaks",
+                description: "A frosty land with snow-covered ground and cool skies.",
+                skyColors: ['#e0f7fa', '#ffffff'],
+                groundColor: '#f0f8ff',
+                grassColor: 'rgba(255, 255, 255, 0.25)',
+                pipeColors: ['#d3e0ea', '#a9c9d9', '#d3e0ea'],
+                pipeEdgeColor: '#a0bfcf',
+                pipeBorderColor: '#4b6e7f',
+                snow: true
+            },
+            {
+                name: "Volcano",
+                description: "A hot, dangerous lava world with fiery skies.",
+                skyColors: ['#ff4e00', '#8b0000'],
+                groundColor: '#5c1e1e',
+                grassColor: 'rgba(139, 0, 0, 0.3)',
+                pipeColors: ['#ff4500', '#ff6347', '#ff4500'],
+                pipeEdgeColor: '#8b2500',
+                pipeBorderColor: '#3b0a0a',
+                lava: true
+            },
+            {
+                name: "City Lights",
+                description: "A lively nighttime city with glowing neon pipes.",
+                skyColors: ['#141414', '#2c3e50'],
+                groundColor: '#2e2e2e',
+                grassColor: 'rgba(60, 60, 60, 0.2)',
+                pipeColors: ['#39ff14', '#00ffff', '#ff00ff'],
+                pipeEdgeColor: '#121212',
+                pipeBorderColor: '#444'
+            },
+            {
+                name: "Desert Dunes",
+                description: "A dry desert with golden sands and heat shimmer.",
+                skyColors: ['#ffcc66', '#f4e2d8'],
+                groundColor: '#d2b48c',
+                grassColor: 'rgba(210, 180, 140, 0.2)',
+                pipeColors: ['#deb887', '#f5deb3', '#deb887'],
+                pipeEdgeColor: '#b8860b',
+                pipeBorderColor: '#6e4b1e',
+                heatwaves: true
+            },
+            {
+                name: "Candyland",
+                description: "A sugary wonderland filled with candy cane pipes and pastel skies.",
+                skyColors: ['#ffc0cb', '#fff0f5'],
+                groundColor: '#ffe4e1',
+                grassColor: 'rgba(255, 182, 193, 0.3)',
+                pipeColors: ['#ff69b4', '#ffb6c1', '#ff69b4'],
+                pipeEdgeColor: '#db7093',
+                pipeBorderColor: '#c71585',
+                candy: true
+            }
+        ];
+
+        // Game variables
+        let selectedBird = 0;
+        let selectedEnv = 0;
+        let gameState = 'menu'; // menu, playing, gameOver, paused
+        let gameStarted = false;
+        let inNest = true;
+        let score = 0;
+        let gameSpeed = 1;
+        let pipes = [];
+        let particles = [];
+        let gameTime = 0;
+
+        // Bird object
+        const bird = {
+            x: 0,
+            y: 0,
+            velocity: 0,
+            rotation: 0,
+            wingFlap: 0,
+            nestY: 0
+        };
+
+        // Initialize game
+        function init() {
+            resizeCanvas();
+            setupBird();
+            setupEnvironment();
+            loadLeaderboard();
+            updateUI();
+            gameLoop();
+        }
+
+        function setupBird() {
+            const birdData = birds[selectedBird];
+            bird.x = canvas.width * 0.2;
+            bird.y = canvas.height * 0.5;
+            bird.nestY = canvas.height * 0.8;
+            bird.velocity = 0;
+            bird.rotation = 0;
+            bird.wingFlap = 0;
+        }
+
+        function setupEnvironment() {
+            pipes = [];
+            particles = [];
+            gameTime = 0;
+
+            // Generate stars for night environment
+            if (environments[selectedEnv]) {
+                renderEnvironmentEffects(environments[selectedEnv])
+            }
+        }
+
+        // Game mechanics
+        function flap() {
+            if (!audioUnlocked) unlockAudio();
+
+            if (inNest) {
+                inNest = false;
+                bird.y = bird.nestY - 100;
+                gameStarted = true;
+                hideElement('nestIndicator');
+                showElement('tapInstruction');
+            }
+
+            const birdData = birds[selectedBird];
+            bird.velocity = birdData.flap;
+            bird.wingFlap = 0.3;
+
+            playSound('flap');
+
+            // Add particles
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x: bird.x - 10,
+                    y: bird.y,
+                    vx: Math.random() * -3 - 1,
+                    vy: Math.random() * 4 - 2,
+                    life: 1,
+                    decay: 0.02,
+                    color: `hsl(${Math.random() * 60 + 180}, 70%, 60%)`
+                });
+            }
+        }
+
+        function updateBird() {
+            const birdData = birds[selectedBird];
+
+            if (inNest) {
+                bird.y = bird.nestY + Math.sin(gameTime * 0.05) * 3;
+                bird.rotation = Math.sin(gameTime * 0.1) * 0.1;
+                return;
+            }
+
+            bird.velocity += birdData.gravity;
+            bird.y += bird.velocity;
+
+            // Update rotation based on velocity
+            bird.rotation = Math.max(-0.5, Math.min(0.5, bird.velocity * 0.1));
+
+            // Wing flap animation
+            if (bird.wingFlap > 0) {
+                bird.wingFlap -= 0.05;
+            }
+
+            // Check boundaries
+            if (bird.y > canvas.height - 50) {
+                gameOver();
+            }
+            if (bird.y < 0) {
+                bird.y = 0;
+                bird.velocity = 0;
+            }
+        }
+
+        function updatePipes() {
+            if (inNest) {
+                return;
+            }
+
+            const settings = difficultySettings[difficulty];
+
+            // Add new pipes
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
+                const gap = settings.gap;
+                const pipeHeight = Math.random() * (canvas.height - gap - 200) + 100;
+
+                pipes.push({
+                    x: canvas.width,
+                    topHeight: pipeHeight,
+                    bottomY: pipeHeight + gap,
+                    bottomHeight: canvas.height - pipeHeight - gap - 50,
+                    scored: false
+                });
+            }
+
+            // Move pipes
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 2 * settings.speed;
+
+                // Check scoring
+                if (!pipes[i].scored && pipes[i].x + 50 < bird.x) {
+                    pipes[i].scored = true;
+                    score++;
+                    playSound('score');
+                    updateScore();
+                }
+
+                // Remove off-screen pipes
+                if (pipes[i].x < -100) {
+                    pipes.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollisions() {
+            const birdData = birds[selectedBird];
+
+            for (let pipe of pipes) {
+                // Check collision with pipes
+                if (bird.x + birdData.radius > pipe.x &&
+                    bird.x - birdData.radius < pipe.x + 50) {
+                    if (bird.y - birdData.radius < pipe.topHeight ||
+                        bird.y + birdData.radius > pipe.bottomY) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1; // gravity
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // Rendering
+        function render() {
+            clearCanvas();
+            drawEnvironment();
+            drawPipes();
+            drawBird();
+            drawParticles();
+            drawNest();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function renderEnvironmentEffects(env) {
+            if (!env) return;
+
+            if (env.stars) {
+                drawStars();
+            }
+            if (env.waves) {
+                drawWaves();
+            }
+            if (env.snow) {
+                updateSnow();
+                drawSnow();
+            }
+            if (env.lava) {
+                drawLava();
+            }
+            if (env.candy) {
+                drawCandySparkles();
+            }
+            if (env.heatwaves) {
+                drawHeatWaves();
+            }
+        }
+
+        function drawEnvironment() {
+            const env = environments[selectedEnv];
+
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, env.skyColors[0]);
+            gradient.addColorStop(1, env.skyColors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ground
+            ctx.fillStyle = env.groundColor;
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Grass effect
+            ctx.fillStyle = env.grassColor;
+            for (let i = 0; i < canvas.width; i += 10) {
+                ctx.fillRect(i, canvas.height - 55, 5, 10);
+            }
+
+            renderEnvironmentEffects(env);
+        }
+
+
+        const stars = Array.from({ length: 100 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height * 0.5,
+            twinkle: Math.random() * 100
+        }));
+
+        function drawStars() {
+            ctx.fillStyle = '#ffffff';
+            for (let star of stars) {
+                const brightness = 0.5 + Math.sin(star.twinkle + gameTime * 0.01) * 0.5;
+                ctx.globalAlpha = brightness;
+                ctx.fillRect(star.x, star.y, 2, 2);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawWaves() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            for (let x = 0; x < canvas.width; x += 5) {
+                const y = canvas.height - 30 + Math.sin(x * 0.01 + gameTime * 0.05) * 10;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        const snowflakes = Array.from({ length: 100 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speedY: 0.5 + Math.random(),
+            twinkle: Math.random() * 100
+        }));
+
+        function drawSnow() {
+            ctx.fillStyle = '#ffffff';
+            for (let flake of snowflakes) {
+                const size = 2 + Math.sin(flake.twinkle + gameTime * 0.02);
+                ctx.globalAlpha = 0.6 + Math.sin(flake.twinkle + gameTime * 0.01) * 0.4;
+                ctx.beginPath();
+                ctx.arc(flake.x, flake.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // update snow
+        function updateSnow() {
+            for (let flake of snowflakes) {
+                flake.y += flake.speedY;
+                if (flake.y > canvas.height) {
+                    flake.y = -5;
+                    flake.x = Math.random() * canvas.width;
+                }
+            }
+        }
+
+        function drawLava() {
+            const lavaGlow = Math.sin(gameTime * 0.1) * 0.5 + 0.5;
+            ctx.fillStyle = `rgba(255, 69, 0, ${0.1 + lavaGlow * 0.2})`;
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+        }
+
+        const sparkles = Array.from({ length: 60 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height * 0.7,
+            twinkle: Math.random() * 100,
+            color: ['#ffb6c1', '#ffd1dc', '#fff0f5', '#ffe4e1'][Math.floor(Math.random() * 4)]
+        }));
+
+        function drawCandySparkles() {
+            for (let sparkle of sparkles) {
+                const alpha = 0.5 + Math.sin(sparkle.twinkle + gameTime * 0.05) * 0.5;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = sparkle.color;
+                ctx.beginPath();
+                ctx.arc(sparkle.x, sparkle.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawHeatWaves() {
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            for (let x = 0; x < canvas.width; x += 6) {
+                const y = canvas.height - 60 + Math.sin(x * 0.03 + gameTime * 0.1) * 3;
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+
+        function drawPipes() {
+            const env = environments[selectedEnv];
+
+            for (let pipe of pipes) {
+                // Top pipe
+                drawPipe(pipe.x, 0, 50, pipe.topHeight, env);
+
+                // Bottom pipe
+                drawPipe(pipe.x, pipe.bottomY, 50, pipe.bottomHeight, env);
+            }
+        }
+
+        function drawPipe(x, y, width, height, env) {
+            // Main pipe body
+            const gradient = ctx.createLinearGradient(x, y, x + width, y);
+            gradient.addColorStop(0, env.pipeColors[0]);
+            gradient.addColorStop(0.5, env.pipeColors[1]);
+            gradient.addColorStop(1, env.pipeColors[2]);
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, width, height);
+
+            // Pipe border
+            ctx.strokeStyle = env.pipeBorderColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+
+            // Pipe edges (caps)
+            ctx.fillStyle = env.pipeEdgeColor;
+            if (y === 0) { // Top pipe
+                ctx.fillRect(x - 5, height - 30, width + 10, 30);
+            } else { // Bottom pipe
+                ctx.fillRect(x - 5, y, width + 10, 30);
+            }
+        }
+
+        function drawBird() {
+            const birdData = birds[selectedBird];
+
+            ctx.save();
+            ctx.translate(bird.x, bird.y);
+            ctx.rotate(bird.rotation);
+
+            // Wing animation
+            const wingOffset = Math.sin(gameTime * 0.3 + bird.wingFlap * 10) * 3;
+
+            // Bird body
+            const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, birdData.radius);
+            bodyGradient.addColorStop(0, birdData.bodyColors[0]);
+            bodyGradient.addColorStop(1, birdData.bodyColors[1]);
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, birdData.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wings
+            ctx.fillStyle = birdData.wingColor;
+            ctx.beginPath();
+            ctx.ellipse(-birdData.radius * 0.3, wingOffset, birdData.radius * 0.8, birdData.radius * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = birdData.eyeColor;
+            ctx.beginPath();
+            ctx.arc(birdData.radius * 0.3, -birdData.radius * 0.3, birdData.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupil
+            ctx.fillStyle = birdData.pupilColor;
+            ctx.beginPath();
+            ctx.arc(birdData.radius * 0.4, -birdData.radius * 0.3, birdData.radius * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Beak
+            const beakGradient = ctx.createLinearGradient(birdData.radius * 0.7, 0, birdData.radius * 1.2, 0);
+            beakGradient.addColorStop(0, birdData.beakColors[0]);
+            beakGradient.addColorStop(1, birdData.beakColors[1]);
+            ctx.fillStyle = beakGradient;
+            ctx.beginPath();
+            ctx.moveTo(birdData.radius * 0.7, 0);
+            ctx.lineTo(birdData.radius * 1.2, -birdData.radius * 0.2);
+            ctx.lineTo(birdData.radius * 1.2, birdData.radius * 0.2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawParticles() {
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawNest() {
+            if (!inNest) return;
+
+            const nestX = bird.x - 30;
+            const nestY = bird.nestY + 20;
+
+            // Nest base
+            ctx.fillStyle = '#8b4513';
+            ctx.beginPath();
+            ctx.ellipse(nestX, nestY, 35, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nest details
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const x1 = nestX + Math.cos(angle) * 25;
+                const y1 = nestY + Math.sin(angle) * 10;
+                const x2 = nestX + Math.cos(angle) * 35;
+                const y2 = nestY + Math.sin(angle) * 15;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        // Audio functions
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            switch (type) {
+                case 'flap':
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.type = 'sine';
+                    break;
+                case 'score':
+                    oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.type = 'sine';
+                    break;
+                case 'gameOver':
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.type = 'sawtooth';
+                    break;
+            }
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function playBirdVoice() {
+            if (!soundEnabled || !audioContext) return;
+
+            const birdData = birds[selectedBird];
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = birdData.voiceType;
+            oscillator.frequency.setValueAtTime(birdData.voiceFreq[0], audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(birdData.voiceFreq[1], audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(birdData.voiceFreq[0], audioContext.currentTime + 0.2);
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updateBird();
+                updatePipes();
+                updateParticles();
+                checkCollisions();
+                gameTime++;
+
+                if (gameTime % 60 === 0) {
+                    hideElement('tapInstruction');
+                }
+            }
+
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Game state management
+        function startGame() {
+            gameState = 'playing';
+            inNest = true;
+            gameStarted = false;
+            score = 0;
+            setupBird();
+            setupEnvironment();
+            updateScore();
+
+            hideAllMenus();
+            showElement('gameUI');
+            showElement('pauseBtn');
+            showElement('nestIndicator');
+        }
+
+        function pauseGame() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                showElement('pauseScreen');
+                hideElement('gameUI');
+                hideElement('pauseBtn');
+            }
+        }
+
+        function resumeGame() {
+            gameState = 'playing';
+            hideElement('pauseScreen');
+            showElement('gameUI');
+            showElement('pauseBtn');
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+            playSound('gameOver');
+
+            // Update leaderboard
+            const leaderboard = getLeaderboard();
+            leaderboard.push({
+                score: score,
+                bird: birds[selectedBird].name,
+                environment: environments[selectedEnv].name,
+                date: new Date().toLocaleDateString()
+            });
+
+            // Sort and keep top 10
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard.splice(10);
+
+            saveLeaderboard(leaderboard);
+
+            // Show game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('highScore').textContent = leaderboard[0]?.score || 0;
+
+            const messages = [
+                "Great flight! 🐦",
+                "You're getting better! 🎯",
+                "Nice try! Keep practicing! 💪",
+                "Almost there! Don't give up! 🌟",
+                "Fantastic effort! 🎉"
+            ];
+
+            document.getElementById('gameOverMessage').textContent =
+                messages[Math.floor(Math.random() * messages.length)];
+
+            hideElement('gameUI');
+            hideElement('pauseBtn');
+            hideElement('tapInstruction');
+            hideElement('nestIndicator');
+            showElement('gameOverScreen');
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        // UI functions
+        function showElement(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideElement(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function hideAllMenus() {
+            const menus = ['mainMenu', 'birdSelectScreen', 'envSelectScreen', 'leaderboardScreen',
+                'settingsScreen', 'instructionsScreen', 'gameOverScreen', 'pauseScreen'];
+            menus.forEach(menu => hideElement(menu));
+        }
+
+        function showMainMenu() {
+            hideAllMenus();
+            hideElement('gameUI');
+            hideElement('pauseBtn');
+            hideElement('tapInstruction');
+            hideElement('nestIndicator');
+            showElement('mainMenu');
+            gameState = 'menu';
+        }
+
+        function showBirdSelect() {
+            hideAllMenus();
+            showElement('birdSelectScreen');
+            updateBirdPreview();
+        }
+
+        function showEnvSelect() {
+            hideAllMenus();
+            showElement('envSelectScreen');
+            updateEnvPreview();
+        }
+
+        function showLeaderboard() {
+            hideAllMenus();
+            showElement('leaderboardScreen');
+            updateLeaderboardDisplay();
+        }
+
+        function showSettings() {
+            hideAllMenus();
+            showElement('settingsScreen');
+        }
+
+        function showInstructions() {
+            hideAllMenus();
+            showElement('instructionsScreen');
+        }
+
+        // Bird selection
+        function prevBird() {
+            selectedBird = (selectedBird - 1 + birds.length) % birds.length;
+            updateBirdPreview();
+        }
+
+        function nextBird() {
+            selectedBird = (selectedBird + 1) % birds.length;
+            updateBirdPreview();
+        }
+
+        function selectBird() {
+            showEnvSelect();
+        }
+
+        function updateBirdPreview() {
+            const birdData = birds[selectedBird];
+            document.getElementById('birdName').textContent = birdData.name;
+            document.getElementById('birdDescription').textContent = birdData.description;
+
+            // Draw bird preview
+            const ctx = previewCtx;
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            ctx.save();
+            ctx.translate(50, 50);
+
+            // Bird body
+            const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, birdData.radius);
+            bodyGradient.addColorStop(0, birdData.bodyColors[0]);
+            bodyGradient.addColorStop(1, birdData.bodyColors[1]);
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, birdData.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wings
+            ctx.fillStyle = birdData.wingColor;
+            ctx.beginPath();
+            ctx.ellipse(-birdData.radius * 0.3, 0, birdData.radius * 0.8, birdData.radius * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = birdData.eyeColor;
+            ctx.beginPath();
+            ctx.arc(birdData.radius * 0.3, -birdData.radius * 0.3, birdData.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupil
+            ctx.fillStyle = birdData.pupilColor;
+            ctx.beginPath();
+            ctx.arc(birdData.radius * 0.4, -birdData.radius * 0.3, birdData.radius * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Beak
+            const beakGradient = ctx.createLinearGradient(birdData.radius * 0.7, 0, birdData.radius * 1.2, 0);
+            beakGradient.addColorStop(0, birdData.beakColors[0]);
+            beakGradient.addColorStop(1, birdData.beakColors[1]);
+            ctx.fillStyle = beakGradient;
+            ctx.beginPath();
+            ctx.moveTo(birdData.radius * 0.7, 0);
+            ctx.lineTo(birdData.radius * 1.2, -birdData.radius * 0.2);
+            ctx.lineTo(birdData.radius * 1.2, birdData.radius * 0.2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Environment selection
+        function prevEnv() {
+            selectedEnv = (selectedEnv - 1 + environments.length) % environments.length;
+            updateEnvPreview();
+        }
+
+        function nextEnv() {
+            selectedEnv = (selectedEnv + 1) % environments.length;
+            updateEnvPreview();
+        }
+
+        function selectEnvironment() {
+            startGame();
+        }
+
+        function updateEnvPreview() {
+            const envData = environments[selectedEnv];
+            document.getElementById('envName').textContent = envData.name;
+            document.getElementById('envDescription').textContent = envData.description;
+
+            // Draw environment preview
+            const ctx = envPreviewCtx;
+            ctx.clearRect(0, 0, envPreviewCanvas.width, envPreviewCanvas.height);
+
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, envPreviewCanvas.height);
+            gradient.addColorStop(0, envData.skyColors[0]);
+            gradient.addColorStop(1, envData.skyColors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, envPreviewCanvas.width, envPreviewCanvas.height);
+
+            // Ground
+            ctx.fillStyle = envData.groundColor;
+            ctx.fillRect(0, envPreviewCanvas.height - 20, envPreviewCanvas.width, 20);
+
+            // Sample pipe
+            const pipeGradient = ctx.createLinearGradient(80, 0, 100, 0);
+            pipeGradient.addColorStop(0, envData.pipeColors[0]);
+            pipeGradient.addColorStop(0.5, envData.pipeColors[1]);
+            pipeGradient.addColorStop(1, envData.pipeColors[2]);
+            ctx.fillStyle = pipeGradient;
+            ctx.fillRect(80, 0, 20, 60);
+            ctx.fillRect(80, 90, 20, 60);
+
+            // Stars for night
+            if (envData.stars) {
+                ctx.fillStyle = '#fff';
+                for (let i = 0; i < 10; i++) {
+                    ctx.fillRect(Math.random() * 200, Math.random() * 100, 1, 1);
+                }
+            }
+        }
+
+        // Settings
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔊 ON' : '🔇 OFF';
+        }
+
+        function changeDifficulty() {
+            const difficulties = ['easy', 'normal', 'hard'];
+            const currentIndex = difficulties.indexOf(difficulty);
+            difficulty = difficulties[(currentIndex + 1) % difficulties.length];
+
+            const button = document.querySelector('#difficultyBtn');
+            button.textContent = `◀ ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} ▶`;
+
+            document.getElementById('difficultyDesc').textContent = difficultySettings[difficulty].description;
+        }
+
+        // Leaderboard
+        function getLeaderboard() {
+            const saved = localStorage.getItem('flappyBirdLeaderboard');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        function saveLeaderboard(leaderboard) {
+            localStorage.setItem('flappyBirdLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function loadLeaderboard() {
+            // Initialize if needed
+            if (!localStorage.getItem('flappyBirdLeaderboard')) {
+                saveLeaderboard([]);
+            }
+        }
+
+        function updateLeaderboardDisplay() {
+            const leaderboard = getLeaderboard();
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = '';
+
+            if (leaderboard.length === 0) {
+                list.innerHTML = '<li class="leaderboard-item">No scores yet! Play a game to get started.</li>';
+                return;
+            }
+
+            leaderboard.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.className = 'leaderboard-item';
+                li.innerHTML = `
+                    <strong>#${index + 1}</strong> - 
+                    Score: ${entry.score} - 
+                    ${entry.bird} in ${entry.environment} - 
+                    ${entry.date}
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function clearLeaderboard() {
+            if (confirm('Are you sure you want to clear all scores?')) {
+                saveLeaderboard([]);
+                updateLeaderboardDisplay();
+            }
+        }
+
+        // Score display
+        function updateScore() {
+            document.getElementById('currentScore').textContent = score;
+        }
+
+        function updateUI() {
+            // Update any UI elements that need initialization
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', () => {
+            if (gameState === 'playing') {
+                flap();
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === 'playing') {
+                flap();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameState === 'playing') {
+                e.preventDefault();
+                flap();
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initialize game
+        init();
+    </script>
+</body>
+
+</html>
